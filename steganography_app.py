@@ -1,4 +1,4 @@
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import filedialog, messagebox
 from cryptography.fernet import Fernet
 from PIL import Image, ImageTk
@@ -17,341 +17,405 @@ import sys
 import os
 
 
+# Color Palette
+COLORS = {
+    "bg_primary": "#1a1a1a",
+    "bg_secondary": "#2b2b2b",
+    "text_primary": "#e0e0e0",
+    "text_secondary": "#a0a0a0",
+    "accent": "#00D9FF",
+    "success": "#00FF88",
+    "error": "#FF4444",
+    "border": "#404040"
+}
+
+
 class SteganographyApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Image Steganography Tool")
-        self.root.geometry("700x650")
-        self.root.configure(bg="#1e1e1e")
-
+        self.root.title("StegoExpress - Image Steganography Tool")
+        self.root.geometry("1000x750")
+        
+        # Set appearance
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+        
+        # Variables
+        self.image_path = ctk.StringVar()
+        self.generated_key = ctk.StringVar()
+        self.stego_image_path = None
+        
+        # Main container
+        self.main_frame = ctk.CTkFrame(self.root, fg_color=COLORS["bg_primary"])
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
         # Title
-        tk.Label(
-            self.root,
-            text="  Image Steganography Tool !!!",
-            font=("Helvetica", 18, "bold"),
-            bg="#1e1e1e",
-            fg="#00FF00",
-        ).grid(row=0, column=0, columnspan=3, pady=10)
-
-        # Email Inputs
-        self.email_frame = tk.Frame(self.root, bg="#1e1e1e")
-        self.email_frame.grid(row=1, column=0, columnspan=3, pady=20, sticky="ew")
-
-        tk.Label(
-            self.email_frame,
-            text="Sender Email:",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-        ).grid(row=0, column=0, sticky="w", padx=20)
-        self.sender_email_entry = tk.Entry(
-            self.email_frame, width=50, font=("Arial", 10), bg="#333", fg="#00FF00"
+        title_label = ctk.CTkLabel(
+            self.main_frame,
+            text="🔒 StegoExpress - Image Steganography Tool",
+            font=("Helvetica", 24, "bold"),
+            text_color=COLORS["accent"]
         )
-        self.sender_email_entry.grid(row=0, column=1, padx=20, pady=5)
-
-        tk.Label(
-            self.email_frame,
-            text="Sender Password:",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-        ).grid(row=1, column=0, sticky="w", padx=20)
-        self.sender_password_entry = tk.Entry(
-            self.email_frame,
-            width=50,
-            font=("Arial", 10),
-            show="*",
-            bg="#333",
-            fg="#00FF00",
+        title_label.pack(pady=(10, 20))
+        
+        # Tabview for Hide/Extract modes
+        self.tabview = ctk.CTkTabview(self.main_frame, fg_color=COLORS["bg_secondary"])
+        self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Create tabs
+        self.tab_hide = self.tabview.add("🔐 Hide Message")
+        self.tab_extract = self.tabview.add("🔓 Extract Message")
+        
+        # Build UI for each tab
+        self.build_hide_tab()
+        self.build_extract_tab()
+        
+        # Status bar
+        self.status_frame = ctk.CTkFrame(self.main_frame, fg_color=COLORS["bg_secondary"], height=40)
+        self.status_frame.pack(fill="x", padx=10, pady=(5, 10))
+        
+        self.status_label = ctk.CTkLabel(
+            self.status_frame,
+            text="Ready",
+            font=("Arial", 11),
+            text_color=COLORS["text_secondary"],
+            anchor="w"
         )
-        self.sender_password_entry.grid(row=1, column=1, padx=20, pady=5)
-
-        tk.Label(
-            self.email_frame,
-            text="Recipient Email:",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-        ).grid(row=2, column=0, sticky="w", padx=20)
-        self.recipient_email_entry = tk.Entry(
-            self.email_frame, width=50, font=("Arial", 10), bg="#333", fg="#00FF00"
+        self.status_label.pack(side="left", padx=10, pady=5)
+        
+    def build_hide_tab(self):
+        """Build the Hide Message tab UI"""
+        # Create scrollable frame for all content
+        scrollable_frame = ctk.CTkScrollableFrame(
+            self.tab_hide, 
+            fg_color=COLORS["bg_primary"],
+            scrollbar_button_color=COLORS["accent"],
+            scrollbar_button_hover_color="#0099CC"
         )
-        self.recipient_email_entry.grid(row=2, column=1, padx=20, pady=5)
-
-        # Image File and Message
-        self.file_message_frame = tk.Frame(self.root, bg="#1e1e1e")
-        self.file_message_frame.grid(
-            row=2, column=0, columnspan=3, pady=10, sticky="ew"
-        )
-
-        tk.Label(
-            self.file_message_frame,
-            text="Image File:",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-        ).grid(row=0, column=0, sticky="w", padx=10)
-        self.image_path = tk.StringVar()
-        tk.Entry(
-            self.file_message_frame,
+        scrollable_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Image selection section
+        image_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        image_frame.pack(fill="x", padx=15, pady=(5, 5))
+        
+        ctk.CTkLabel(
+            image_frame,
+            text="Select Cover Image:",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left", padx=10, pady=10)
+        
+        self.hide_image_entry = ctk.CTkEntry(
+            image_frame,
             textvariable=self.image_path,
-            width=40,
-            font=("Arial", 10),
-            bg="#333",
-            fg="#00FF00",
-        ).grid(row=0, column=1, padx=10)
-        tk.Button(
-            self.file_message_frame,
+            width=400,
+            height=35,
+            font=("Arial", 11)
+        )
+        self.hide_image_entry.pack(side="left", padx=10, pady=10)
+        
+        ctk.CTkButton(
+            image_frame,
             text="Browse",
-            font=("Arial", 10),
-            command=self.browse_image,
-            bg="#00FF00",
-            fg="black",
-            relief="flat",
-        ).grid(row=0, column=2, padx=10)
-
-        self.message_label = tk.Label(
-            self.file_message_frame,
-            text="Message to Encrypt:",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
+            command=self.browse_hide_image,
+            width=100,
+            height=35,
+            fg_color=COLORS["accent"],
+            hover_color="#0099CC",
+            font=("Arial", 12, "bold")
+        ).pack(side="left", padx=10, pady=10)
+        
+        # Image preview
+        preview_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        preview_frame.pack(fill="x", padx=15, pady=5)
+        
+        self.hide_preview_label = ctk.CTkLabel(
+            preview_frame,
+            text="📷 Image Preview\n\nNo image selected",
+            font=("Arial", 14),
+            text_color=COLORS["text_secondary"]
         )
-        self.message_label.grid(row=1, column=0, sticky="w", padx=10)
-        self.message_entry = tk.Entry(
-            self.file_message_frame,
-            width=50,
-            font=("Arial", 10),
-            bg="#333",
-            fg="#00FF00",
+        self.hide_preview_label.pack(pady=20)
+        
+        # Message input
+        message_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        message_frame.pack(fill="x", padx=15, pady=5)
+        
+        ctk.CTkLabel(
+            message_frame,
+            text="Secret Message:",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left", padx=10, pady=10)
+        
+        self.message_entry = ctk.CTkEntry(
+            message_frame,
+            width=500,
+            height=35,
+            placeholder_text="Enter your secret message here...",
+            font=("Arial", 11)
         )
-        self.message_entry.grid(row=1, column=1, padx=10, pady=5)
-
-        # Radio Buttons for Operation
-        self.operation = tk.StringVar(value="encrypt")
-        operations_frame = tk.Frame(self.root, bg="#1e1e1e")
-        operations_frame.grid(row=3, column=0, columnspan=3, pady=10)
-
-        tk.Radiobutton(
-            operations_frame,
-            text="Encrypt",
-            variable=self.operation,
-            value="encrypt",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-            selectcolor="#1e1e1e",
-            command=self.toggle_mode,
-        ).grid(row=0, column=0, padx=20)
-
-        tk.Radiobutton(
-            operations_frame,
-            text="Decrypt",
-            variable=self.operation,
-            value="decrypt",
-            font=("Arial", 12),
-            bg="#1e1e1e",
-            fg="#00FF00",
-            selectcolor="#1e1e1e",
-            command=self.toggle_mode,
-        ).grid(row=0, column=1, padx=20)
-
-        # Image Preview Section
-        self.preview_frame = tk.Frame(self.root, bg="#1e1e1e", width=700, height=600)
-        self.preview_frame.grid(row=4, column=0, columnspan=3, pady=10)
-        self.preview_label = tk.Label(self.preview_frame, bg="#1e1e1e")
-        self.preview_label.grid(row=0, column=0)
-
-        # Action Button
-        self.action_button = tk.Button(
-            self.root,
-            text="Encrypt",
-            font=("Arial", 12),
+        self.message_entry.pack(side="left", padx=10, pady=10, fill="x", expand=True)
+        
+        # Encrypt button
+        ctk.CTkButton(
+            scrollable_frame,
+            text="🔐 Encrypt Message",
             command=self.encrypt_action,
-            bg="#00FF00",
-            fg="black",
-            relief="flat",
+            width=200,
+            height=40,
+            fg_color=COLORS["accent"],
+            hover_color="#0099CC",
+            font=("Arial", 14, "bold")
+        ).pack(pady=10)
+        
+        # Key display section (initially hidden)
+        self.key_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        self.key_frame.pack(fill="x", padx=15, pady=5)
+        self.key_frame.pack_forget()  # Hide initially
+        
+        ctk.CTkLabel(
+            self.key_frame,
+            text="🔑 Encryption Key (Save this!):",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["success"]
+        ).pack(side="left", padx=10, pady=10)
+        
+        self.key_display = ctk.CTkEntry(
+            self.key_frame,
+            textvariable=self.generated_key,
+            width=400,
+            height=35,
+            font=("Arial", 10),
+            state="readonly"
         )
-        self.action_button.grid(row=5, column=0, columnspan=3, pady=20)
-
-        # Tool Info Button
-        self.tool_info_button = tk.Button(
-            self.root,
-            text="Tool Info",
+        self.key_display.pack(side="left", padx=10, pady=10)
+        
+        ctk.CTkButton(
+            self.key_frame,
+            text="📋 Copy Key",
+            command=self.copy_key_to_clipboard,
+            width=100,
+            height=35,
+            fg_color=COLORS["success"],
+            hover_color="#00CC66",
+            font=("Arial", 12, "bold")
+        ).pack(side="left", padx=10, pady=10)
+        
+        # Email section (initially hidden)
+        self.email_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        self.email_frame.pack(fill="x", padx=15, pady=5)
+        self.email_frame.pack_forget()  # Hide initially
+        
+        ctk.CTkLabel(
+            self.email_frame,
+            text="📧 Email Configuration (Optional)",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["accent"]
+        ).pack(pady=(10, 5))
+        
+        # Sender email
+        sender_frame = ctk.CTkFrame(self.email_frame, fg_color="transparent")
+        sender_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(sender_frame, text="Sender Email:", width=120, anchor="w").pack(side="left", padx=5)
+        self.sender_email_entry = ctk.CTkEntry(sender_frame, width=300, height=30)
+        self.sender_email_entry.pack(side="left", padx=5)
+        
+        # Sender password
+        password_frame = ctk.CTkFrame(self.email_frame, fg_color="transparent")
+        password_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(password_frame, text="Sender Password:", width=120, anchor="w").pack(side="left", padx=5)
+        self.sender_password_entry = ctk.CTkEntry(password_frame, width=300, height=30, show="*")
+        self.sender_password_entry.pack(side="left", padx=5)
+        
+        # Recipient email
+        recipient_frame = ctk.CTkFrame(self.email_frame, fg_color="transparent")
+        recipient_frame.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(recipient_frame, text="Recipient Email:", width=120, anchor="w").pack(side="left", padx=5)
+        self.recipient_email_entry = ctk.CTkEntry(recipient_frame, width=300, height=30)
+        self.recipient_email_entry.pack(side="left", padx=5)
+        
+        # Send button
+        ctk.CTkButton(
+            self.email_frame,
+            text="📤 Send via Email",
+            command=self.send_email_action,
+            width=200,
+            height=35,
+            fg_color=COLORS["accent"],
+            hover_color="#0099CC",
+            font=("Arial", 12, "bold")
+        ).pack(pady=10)
+        
+        
+    def build_extract_tab(self):
+        """Build the Extract Message tab UI"""
+        # Create scrollable frame for all content
+        scrollable_frame = ctk.CTkScrollableFrame(
+            self.tab_extract, 
+            fg_color=COLORS["bg_primary"],
+            scrollbar_button_color=COLORS["accent"],
+            scrollbar_button_hover_color="#0099CC"
+        )
+        scrollable_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Image selection section
+        image_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        image_frame.pack(fill="x", padx=15, pady=(5, 5))
+        
+        ctk.CTkLabel(
+            image_frame,
+            text="Select Stego-Image:",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left", padx=10, pady=10)
+        
+        self.extract_image_path = ctk.StringVar()
+        self.extract_image_entry = ctk.CTkEntry(
+            image_frame,
+            textvariable=self.extract_image_path,
+            width=400,
+            height=35,
+            font=("Arial", 11)
+        )
+        self.extract_image_entry.pack(side="left", padx=10, pady=10)
+        
+        ctk.CTkButton(
+            image_frame,
+            text="Browse",
+            command=self.browse_extract_image,
+            width=100,
+            height=35,
+            fg_color=COLORS["accent"],
+            hover_color="#0099CC",
+            font=("Arial", 12, "bold")
+        ).pack(side="left", padx=10, pady=10)
+        
+        # Image preview
+        preview_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        preview_frame.pack(fill="x", padx=15, pady=5)
+        
+        self.extract_preview_label = ctk.CTkLabel(
+            preview_frame,
+            text="📷 Image Preview\n\nNo image selected",
+            font=("Arial", 14),
+            text_color=COLORS["text_secondary"]
+        )
+        self.extract_preview_label.pack(pady=20)
+        
+        # Key input
+        key_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        key_frame.pack(fill="x", padx=15, pady=5)
+        
+        ctk.CTkLabel(
+            key_frame,
+            text="🔑 Decryption Key:",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left", padx=10, pady=10)
+        
+        self.decrypt_key_entry = ctk.CTkEntry(
+            key_frame,
+            width=500,
+            height=35,
+            placeholder_text="Paste your decryption key here...",
+            font=("Arial", 11)
+        )
+        self.decrypt_key_entry.pack(side="left", padx=10, pady=10, fill="x", expand=True)
+        
+        # Decrypt button
+        ctk.CTkButton(
+            scrollable_frame,
+            text="🔓 Decrypt Message",
+            command=self.decrypt_action,
+            width=200,
+            height=40,
+            fg_color=COLORS["accent"],
+            hover_color="#0099CC",
+            font=("Arial", 14, "bold")
+        ).pack(pady=10)
+        
+        # Decrypted message display
+        result_frame = ctk.CTkFrame(scrollable_frame, fg_color=COLORS["bg_secondary"])
+        result_frame.pack(fill="x", padx=15, pady=5)
+        
+        ctk.CTkLabel(
+            result_frame,
+            text="📝 Decrypted Message:",
+            font=("Arial", 13, "bold"),
+            text_color=COLORS["success"]
+        ).pack(anchor="w", padx=10, pady=(10, 5))
+        
+        self.decrypted_message_box = ctk.CTkTextbox(
+            result_frame,
+            height=150,
             font=("Arial", 12),
-            command=self.tool_info,
-            bg="#00FF00",
-            fg="black",
-            relief="flat",
+            wrap="word"
         )
-        self.tool_info_button.grid(row=6, column=0, columnspan=3, pady=10)
-
-        # Initialize mode
-        self.toggle_mode()
-
-    def toggle_mode(self):
-        if self.operation.get() == "encrypt":
-            self.action_button.config(text="Encrypt", command=self.encrypt_action)
-            self.message_label.config(text="Message to Encrypt:")
-            self.email_frame.grid(row=1, column=0, columnspan=3, pady=20, sticky="ew")
-        else:
-            self.action_button.config(text="Decrypt", command=self.decrypt_action)
-            self.message_label.config(text="Key for Decryption:")
-            self.email_frame.grid_forget()
-
-    def browse_image(self):
+        self.decrypted_message_box.pack(fill="both", expand=True, padx=10, pady=(5, 10))
+        
+        
+    def browse_hide_image(self):
+        """Browse and select image for hiding message"""
         file_path = filedialog.askopenfilename(
             filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
         )
         if file_path:
             self.image_path.set(file_path)
-            self.update_image_preview(file_path)
-
-    def update_image_preview(self, image_path):
+            self.update_image_preview(file_path, self.hide_preview_label)
+            self.update_status(f"Selected: {os.path.basename(file_path)}", COLORS["success"])
+            
+    def browse_extract_image(self):
+        """Browse and select stego-image for extraction"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+        )
+        if file_path:
+            self.extract_image_path.set(file_path)
+            self.update_image_preview(file_path, self.extract_preview_label)
+            self.update_status(f"Selected: {os.path.basename(file_path)}", COLORS["success"])
+            
+    def update_image_preview(self, image_path, label_widget):
+        """Update image preview in the specified label"""
         try:
             image = Image.open(image_path)
-            image.thumbnail((300, 300))
+            image.thumbnail((500, 400))
             photo = ImageTk.PhotoImage(image)
-            self.preview_label.config(image=photo)
-            self.preview_label.image = photo
+            label_widget.configure(image=photo, text="")
+            label_widget.image = photo
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load image: {str(e)}")
-
-    def tool_info(self):
-        # Generate the HTML content with the provided details
-        html_content = """
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Project Information</title>
-        <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #1e1e1e;
-            color: #00FF00;
-            text-align: center;
-            padding: 20px;
-        }
-        h1, h2 {
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
-        p {
-            font-size: 1.2em;
-            line-height: 1.6;
-            text-align: left;
-            margin: 0 auto;
-            width: 90%;
-            max-width: 800px;
-        }
-        a {
-            color: #00FF00;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        ul {
-            text-align: left;
-            margin: 0 auto;
-            padding: 0;
-            list-style-type: disc;
-            width: 90%;
-            max-width: 800px;
-        }
-        li {
-            margin: 10px 0;
-        }
-        table {
-            margin: 20px auto;
-            border-collapse: collapse;
-            width: 90%;
-            max-width: 800px;
-            color: #00FF00;
-        }
-        th, td {
-            border: 1px solid #00FF00;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #333;
-        }
-    </style>
-</head>
-<body>
-    <h1>Project Information</h1>
-    <p>This project was developed by Naresh G,
-    It is designed to secure organizations in the real world from cyber frauds performed by hackers.</p>
-    
-    <h2>Project Details</h2>
-    <table>
-        <tr><th>Project Name</th><td>Image Steganography using LSB</td></tr>
-        <tr><th>Project Description</th><td>Hiding Message with Encryption in Image using LSB Algorithm</td></tr>
-        <tr><th>Project Start Date</th><td>16-Nov-2024</td></tr>
-        <tr><th>Project End Date</th><td>21-DEC-2024</td></tr>
-        <tr><th>Project Status</th><td>Completed</td></tr>
-    </table>
-
-    <h2>Developer Details</h2>
-    <table>
-        <tr><th>Name</th><th>Email</th></tr>
-        <tr><td>Naresh G</td><td>gnaresh3003@gmail.com</td></tr>
-    </table>
-
-</body>
-</html>
-"""
-
-        # Save the HTML content to a temporary file
-        html_file = "tool_info.html"
-        with open(html_file, "w") as file:
-            file.write(html_content)
-
-        # Serve the file locally using a temporary HTTP server
-        def serve_file():
-            handler = http.server.SimpleHTTPRequestHandler
-            with socketserver.TCPServer(("127.0.0.1", 0), handler) as httpd:
-                # Get the dynamically assigned port and open the browser
-                port = httpd.server_address[1]
-                url = f"http://127.0.0.1:{port}/{html_file}"
-                threading.Thread(target=webbrowser.open, args=(url,)).start()
-                httpd.serve_forever()
-
-        threading.Thread(target=serve_file, daemon=True).start()
-
-
+            self.update_status(f"Failed to load image: {str(e)}", COLORS["error"])
+            
     def encrypt_action(self):
+        """Encrypt message and embed in image"""
         image_file = self.image_path.get()
         message = self.message_entry.get()
-        sender_email = self.sender_email_entry.get()
-        sender_password = self.sender_password_entry.get()
-        recipient_email = self.recipient_email_entry.get()
-
-        if not all([image_file, message, sender_email, sender_password, recipient_email]):
-            messagebox.showerror("Error", "All fields are required.")
+        
+        if not image_file or not message:
+            messagebox.showerror("Error", "Please select an image and enter a message.")
             return
-
+            
         try:
-            # Generate the encryption key
+            self.update_status("Encrypting message...", COLORS["accent"])
+            
+            # Generate encryption key
             key = Fernet.generate_key()
             f = Fernet(key)
             secret_message = f.encrypt(message.encode())
-
+            
             # Open the image
             image = Image.open(image_file)
             pixels = list(image.getdata())
-
-            # Convert the encrypted message to binary
+            
+            # Convert encrypted message to binary
             binary_secret = "".join(format(byte, "08b") for byte in secret_message)
             new_pixels = []
             pixel_index = 0
-
-            # Embed the binary data into the least significant bits of the image pixels
+            
+            # Embed binary data into LSB
             for pixel in pixels:
                 r, g, b = pixel
                 if pixel_index < len(binary_secret):
@@ -364,115 +428,78 @@ class SteganographyApp:
                     b = b & 0xFE | int(binary_secret[pixel_index])
                     pixel_index += 1
                 new_pixels.append((r, g, b))
-
+                
             image.putdata(new_pixels)
-            output_image_path = f"{os.path.splitext(os.path.basename(image_file))[0]}.png"
+            output_image_path = f"{os.path.splitext(os.path.basename(image_file))[0]}_stego.png"
             image.save(output_image_path, "PNG")
-
-            # Send the email with the encryption key in the subject
+            self.stego_image_path = output_image_path
+            
+            # Display key and show email section
+            self.generated_key.set(key.decode())
+            self.key_frame.pack(fill="x", padx=20, pady=5)
+            self.email_frame.pack(fill="x", padx=20, pady=5)
+            
+            # Update preview with stego image
+            self.update_image_preview(output_image_path, self.hide_preview_label)
+            
+            self.update_status(f"✓ Message encrypted successfully! Stego-image saved: {output_image_path}", COLORS["success"])
+            messagebox.showinfo("Success", f"Message encrypted!\n\nStego-image saved as: {output_image_path}\n\nPlease save your encryption key!")
+            
+        except Exception as e:
+            self.update_status(f"Encryption failed: {str(e)}", COLORS["error"])
+            messagebox.showerror("Error", f"Encryption failed: {str(e)}")
+            
+    def copy_key_to_clipboard(self):
+        """Copy encryption key to clipboard"""
+        key = self.generated_key.get()
+        if key:
+            self.root.clipboard_clear()
+            self.root.clipboard_append(key)
+            self.update_status("✓ Key copied to clipboard!", COLORS["success"])
+            messagebox.showinfo("Success", "Encryption key copied to clipboard!")
+                
+    def send_email_action(self):
+        """Send stego-image via email"""
+        sender_email = self.sender_email_entry.get()
+        sender_password = self.sender_password_entry.get()
+        recipient_email = self.recipient_email_entry.get()
+        
+        if not all([sender_email, sender_password, recipient_email]):
+            messagebox.showerror("Error", "Please fill in all email fields.")
+            return
+            
+        if not self.stego_image_path:
+            messagebox.showerror("Error", "Please encrypt a message first.")
+            return
+            
+        try:
+            self.update_status("Sending email...", COLORS["accent"])
             self.send_email(
-                output_image_path,
-                key.decode(),
+                self.stego_image_path,
+                self.generated_key.get(),
                 sender_email,
                 sender_password,
-                recipient_email,
+                recipient_email
             )
-
-            messagebox.showinfo(
-                "Success", f"Image encrypted and sent to {recipient_email}."
-            )
-            self.clear_fields()
-
+            self.update_status(f"✓ Email sent to {recipient_email}", COLORS["success"])
+            messagebox.showinfo("Success", f"Stego-image and key sent to {recipient_email}!")
+            
         except Exception as e:
-            messagebox.showerror("Error", f"An error occurred during encryption: {str(e)}")
-    def check_image_capacity(self, message):
-        # Convert message to binary
-        binary_message = ''.join(format(ord(char), '08b') for char in message)
-        message_length_in_bits = len(binary_message)
-    
-        # Calculate the available space in the image
-        image_file = self.image_path.get()
-        image = Image.open(image_file)
-        image_pixels = image.size[0] * image.size[1] * 3  # 3 channels: R, G, B
-    
-        if message_length_in_bits > image_pixels:
-            messagebox.showerror("Error", "The message is too long for this image. Please select a larger image or split the message.")
-            return False
-        return True
-    
-    def browse_cover_image(self):
-        file_path = filedialog.askopenfilename(
-            filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
-        )
-        if file_path:
-            self.cover_image_path.set(file_path)
-            self.update_image_preview(file_path)
-
-
-    def browse_hidden_file(self):
-        file_path = filedialog.askopenfilename()
-        if file_path:
-            self.hidden_file_path.set(file_path)
-
-
-    def embed_message(self, image, message):
-        binary_message = ''.join(format(ord(char), '08b') for char in message)
-        pixels = list(image.getdata())
-        new_pixels = []
-        pixel_index = 0
-    def update_image_preview(self, image_path):
-        try:
-            image = Image.open(image_path)
-            image.thumbnail((300, 300))
-            photo = ImageTk.PhotoImage(image)
-            self.preview_label.config(image=photo)
-            self.preview_label.image = photo
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load image: {str(e)}")
-        for pixel in pixels:
-            r, g, b = pixel
-            if pixel_index < len(binary_message):
-                r = r & 0xFC | int(binary_message[pixel_index:pixel_index+2], 2)
-                pixel_index += 2
-            if pixel_index < len(binary_message):
-                g = g & 0xFC | int(binary_message[pixel_index:pixel_index+2], 2)
-                pixel_index += 2
-            if pixel_index < len(binary_message):
-                b = b & 0xFC | int(binary_message[pixel_index:pixel_index+2], 2)
-                pixel_index += 2
-            new_pixels.append((r, g, b))
-
-        image.putdata(new_pixels)
-        return image
-    def split_message(self, message, max_image_capacity):
-        # Split the message into parts that can fit into the image
-        binary_message = ''.join(format(ord(char), '08b') for char in message)
-        parts = []
-    
-        while len(binary_message) > max_image_capacity:
-            parts.append(binary_message[:max_image_capacity])
-            binary_message = binary_message[max_image_capacity:]
-    
-        if binary_message:
-            parts.append(binary_message)
-    
-        return parts
-
-
-
-
+            self.update_status(f"Email failed: {str(e)}", COLORS["error"])
+            messagebox.showerror("Error", f"Failed to send email: {str(e)}")
+            
     def send_email(self, image_path, key, sender_email, sender_password, recipient_email):
+        """Send email with stego-image attachment"""
         try:
             msg = MIMEMultipart()
             msg["From"] = sender_email
             msg["To"] = recipient_email
-            msg["Subject"] = "Your Encryption Key and Image"
-
-            # Modify the body text to include the encryption key
-            body = f"Please find the attached encrypted image. Use the encryption key provided in the subject to decrypt it: {key}"
+            msg["Subject"] = "StegoExpress - Encrypted Image"
+            
+            body = f"You have received an encrypted image via StegoExpress.\n\nEncryption Key: {key}\n\nPlease save this key to decrypt the hidden message."
             msg.attach(MIMEText(body, "plain"))
-
-            # Attach the image
+            
+            # Attach image
             with open(image_path, "rb") as image_attachment:
                 img_base = MIMEBase("application", "octet-stream")
                 img_base.set_payload(image_attachment.read())
@@ -482,102 +509,81 @@ class SteganographyApp:
                     f'attachment; filename="{os.path.basename(image_path)}"'
                 )
                 msg.attach(img_base)
-
-            # Send the email
+                
+            # Send email
             server = smtplib.SMTP("smtp.gmail.com", 587)
             server.starttls()
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, recipient_email, msg.as_string())
             server.quit()
-
+            
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send email: {str(e)}")
-
-
+            raise Exception(f"Email sending failed: {str(e)}")
+            
     def decrypt_action(self):
-        encrypted_image_path = self.image_path.get()
-        key = self.message_entry.get()
-
+        """Decrypt message from stego-image"""
+        encrypted_image_path = self.extract_image_path.get()
+        key = self.decrypt_key_entry.get()
+        
         if not encrypted_image_path or not key:
-            messagebox.showerror("Error", "Please select the encrypted image and provide the decryption key.")
+            messagebox.showerror("Error", "Please select an image and provide the decryption key.")
             return
-
-        # Run decryption in a separate thread to keep the UI responsive
-        decryption_thread = threading.Thread(target=self.perform_decryption, args=(encrypted_image_path, key))
-        decryption_thread.start()
-
+            
+        # Run in thread to keep UI responsive
+        threading.Thread(target=self.perform_decryption, args=(encrypted_image_path, key), daemon=True).start()
+        
     def perform_decryption(self, encrypted_image_path, key):
+        """Perform decryption in background thread"""
         try:
-            # Convert the key from string to bytes for Fernet
+            self.root.after(0, self.update_status, "Decrypting message...", COLORS["accent"])
+            
+            # Convert key to bytes
             f = Fernet(key.encode())
-            print(f"Using key: {key}")
-
-            # Open the encrypted image and extract the pixel data
+            
+            # Open encrypted image
             encoded_image = Image.open(encrypted_image_path)
             pixels = list(encoded_image.getdata())
-
-            # Extract the binary data hidden in the image pixels
+            
+            # Extract binary data from LSB
             binary_secret = ''
             for pixel in pixels:
                 r, g, b = pixel
-                binary_secret += str(r & 1)  # Extract LSB of red channel
-                binary_secret += str(g & 1)  # Extract LSB of green channel
-                binary_secret += str(b & 1)  # Extract LSB of blue channel
-
-            print(f"Binary secret extracted: {binary_secret[:100]}...")  # Log first 100 bits for debugging
-
-            # Check if the binary secret has sufficient length
-            expected_len = len(binary_secret)
-            print(f"Total extracted binary bits: {expected_len}")
-
-            if expected_len < 8:
-                raise Exception("Insufficient data extracted. The image may not contain enough hidden information.")
-
-            # Convert the binary string into the original message bytes
+                binary_secret += str(r & 1)
+                binary_secret += str(g & 1)
+                binary_secret += str(b & 1)
+                
+            # Convert binary to bytes
             byte_array = bytearray()
             for i in range(0, len(binary_secret), 8):
                 byte = binary_secret[i:i + 8]
-                if len(byte) == 8:  # Only consider valid 8-bit segments
+                if len(byte) == 8:
                     byte_array.append(int(byte, 2))
-
-            print(f"Byte array length: {len(byte_array)} bytes")  # Check the byte array length
-            print(f"First 20 bytes: {byte_array[:20]}...")  # Log first 20 bytes for debugging
-
-            # Ensure that we have a reasonable message length
-            if len(byte_array) < 10:
-                raise Exception("The extracted binary data is too short to be a valid encrypted message.")
-
-            # Convert byte array to a string and remove padding (null bytes) if necessary
+                    
+            # Remove padding and decrypt
             extracted_message = bytes(byte_array).decode('utf-8', errors='ignore').rstrip('\x00')
-
-            # Decrypt the message using Fernet
-            print(f"Extracted message length: {len(extracted_message)} characters")
             original_message = f.decrypt(extracted_message.encode()).decode()
-
-            # Show the decrypted message in the main thread
-            self.root.after(0, messagebox.showinfo, "Success", "The Hidden Text is:\n" + original_message)
-            self.clear_fields()
-
+            
+            # Display result
+            self.root.after(0, self.display_decrypted_message, original_message)
+            self.root.after(0, self.update_status, "✓ Message decrypted successfully!", COLORS["success"])
+            
         except Exception as e:
-            self.root.after(0, messagebox.showerror, "Error", f"An error occurred during decryption: {str(e)}")
-            self.clear_fields()
-
-
-
-
-
-    def clear_fields(self):
-        self.image_path.set("")
-        self.message_entry.delete(0, tk.END)
-        self.sender_email_entry.delete(0, tk.END)
-        self.sender_password_entry.delete(0, tk.END)
-        self.recipient_email_entry.delete(0, tk.END)
-        self.preview_label.config(image="")
-        self.preview_label.image = None
+            self.root.after(0, self.update_status, f"Decryption failed: {str(e)}", COLORS["error"])
+            self.root.after(0, messagebox.showerror, "Error", f"Decryption failed: {str(e)}")
+            
+    def display_decrypted_message(self, message):
+        """Display decrypted message in textbox"""
+        self.decrypted_message_box.delete("1.0", "end")
+        self.decrypted_message_box.insert("1.0", message)
+        messagebox.showinfo("Success", "Message decrypted successfully!")
+        
+    def update_status(self, message, color):
+        """Update status bar with message and color"""
+        self.status_label.configure(text=message, text_color=color)
 
 
 # Main program execution
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ctk.CTk()
     app = SteganographyApp(root)
     root.mainloop()
