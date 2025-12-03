@@ -6,7 +6,7 @@
 [![Status](https://img.shields.io/badge/Status-Active-success)](https://github.com/harish-d2023/StegoExpress)
 
 <div align="center">
-  <img src="homepage.png" alt="StegoExpress Logo" width="200"/>
+  <img src="homepage.png" alt="StegoExpress Logo" width="300"/>
   
   ### Secure Message Hiding with Modern UI
   *Hide encrypted messages within images using LSB steganography*
@@ -76,15 +76,17 @@ Perfect for:
 
 ## 📸 Screenshots
 <div align="center">
-  <img src="Screenshot-1.png" alt="StegoExpress Logo" width="200"/>
-### Hide Message Interface
-*Modern tabbed interface with image preview, message input, and email configuration*
+  <img src="Screenshot-1.png" alt="StegoExpress Logo" width="300"/>
+    
+  ### Hide Message Interface
+  *Modern tabbed interface with image preview, message input, and email configuration*
  </div>
 
  <div align="center">
-  <img src="Screenshot-2.png" alt="StegoExpress Logo" width="200"/>
-### Extract Message Interface
-*Clean decryption interface with scrollable message display*
+  <img src="Screenshot-2.png" alt="StegoExpress Logo" width="300"/>
+
+   ### Extract Message Interface
+  *Clean decryption interface with scrollable message display*
  </div>  
 
 ---
