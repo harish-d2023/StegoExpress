@@ -232,7 +232,7 @@ Stego-Image → LSB Extraction → Binary to Bytes → Fernet Decryption → Ori
 | **Version** | 2.0 (Modernized GUI) |
 | **Status** | ✅ Active Development |
 | **Start Date** | November 16, 2024 |
-| **Last Updated** | December 3, 2024 |
+| **Last Updated** | December 3, 2025 |
 
 ### 👨‍💻 Developers
 
@@ -243,7 +243,7 @@ Stego-Image → LSB Extraction → Binary to Bytes → Fernet Decryption → Ori
 
 ### 🎯 Development Milestones
 
-- ✅ **v1.0** - Basic Tkinter GUI with LSB steganography
+- ✅ **v1.0** - Custom Tkinter GUI with LSB steganography
 - ✅ **v1.5** - Added Fernet encryption and email integration
 - ✅ **v2.0** - Modernized GUI with CustomTkinter, tabbed interface, scrolling support
 
@@ -276,7 +276,7 @@ This project is for **educational and research purposes only**.
 - ✅ Modify and distribute with attribution
 - ❌ Commercial use requires permission
 
-For commercial licensing, please contact: **gnaresh3003@gmail.com**
+For commercial licensing, please contact: **harishd2023@gmail.com**
 
 See [LICENSE](./LICENSE) for more details.
 
@@ -300,7 +300,7 @@ Encountered a bug or have a feature request?
 
 - 📝 [Open an Issue](https://github.com/harish-d2023/StegoExpress/issues)
 - 💬 [Discussions](https://github.com/harish-d2023/StegoExpress/discussions)
-- 📧 Email: gnaresh3003@gmail.com
+- 📧 Email: harishd2023@gmail.com
 
 ---
 
